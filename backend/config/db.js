@@ -52,7 +52,7 @@
 ==================================================
 */
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
@@ -77,7 +77,7 @@ const connectDB = async () => {
     ──────────────────────────────────────────────
     */
 
-
+    const conn = await mongoose.connect(process.env.MONGO_URI);
     /*
     ──────────────────────────────────────────────
     TODO 2: Log the successful connection
@@ -90,7 +90,7 @@ const connectDB = async () => {
     console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
     ──────────────────────────────────────────────
     */
-
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
 
     /*
     ──────────────────────────────────────────────
@@ -111,10 +111,20 @@ const connectDB = async () => {
     ──────────────────────────────────────────────
     */
 
+    mongoose.connection.on("error", (err) => {
+      console.error(`❌ MongoDB Error: ${err.message}`);
+    });
 
-    // ⬆️ Remove this line once you implement the TODOs above
-    console.log('⚠️  Database connection not yet implemented (Assignment Pending)');
+    mongoose.connection.on("disconnected", () => {
+      console.warn("⚠️ MongoDB Disconnected");
+    });
 
+    mongoose.connection.on("reconnected", () => {
+      console.log("🔄 MongoDB Reconnected");
+    });
+
+    // // ⬆️ Remove this line once you implement the TODOs above
+    // console.log('⚠️  Database connection not yet implemented (Assignment Pending)');
   } catch (error) {
     console.error(`❌ MongoDB connection failed: ${error.message}`);
     process.exit(1);

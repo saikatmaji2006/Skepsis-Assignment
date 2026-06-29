@@ -66,7 +66,7 @@
 ==================================================
 */
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 /*
 ──────────────────────────────────────────────
@@ -90,6 +90,18 @@ const SUBJECTS = ['DSA', 'DBMS', ...];
 
 const SUBJECTS = [
   // ⬇️ Add the subject strings here
+
+  "DSA",
+  "DBMS",
+  "Operating Systems",
+  "Computer Networks",
+  "Machine Learning",
+  "Artificial Intelligence",
+  "Web Development",
+  "Java",
+  "Python",
+  "C++",
+  "General",
 ];
 
 /*
@@ -140,11 +152,50 @@ const noteSchema = new mongoose.Schema(
 const noteSchema = new mongoose.Schema(
   {
     // ⬇️ Define your schema fields here
+    title: {
+      type: String,
+      required: [true, "Title is required"],
+      trim: true,
+      maxlength: [150, "Title cannot exceed 150 characters"],
+    },
 
+    description: {
+      type: String,
+      required: [true, "Description is required"],
+      trim: true,
+      maxlength: [1000, "Description cannot exceed 1000 characters"],
+    },
+
+    subject: {
+      type: String,
+      required: [true, "Subject is required"],
+      enum: {
+        values: SUBJECTS,
+        message: "{VALUE} is not a valid subject",
+      },
+    },
+
+    driveLink: {
+      type: String,
+      required: [true, "Google Drive link is required"],
+      trim: true,
+      validate: {
+        validator: function (v) {
+          return /^https:\/\/(drive\.google\.com|docs\.google\.com)/.test(v);
+        },
+        message: "Please provide a valid Google Drive or Google Docs link",
+      },
+    },
+
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 /*
@@ -162,7 +213,11 @@ noteSchema.index({ title: 'text', description: 'text', subject: 'text' });
 */
 
 // ⬇️ Create your text index here
+noteSchema.index({
+  title: "text",
+  description: "text",
+  subject: "text",
+});
 
-
-module.exports = mongoose.model('Note', noteSchema);
+module.exports = mongoose.model("Note", noteSchema);
 module.exports.SUBJECTS = SUBJECTS;
