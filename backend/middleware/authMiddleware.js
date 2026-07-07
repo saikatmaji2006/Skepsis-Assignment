@@ -109,9 +109,10 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       ──────────────────────────────────────────────
       */
-
+      token = req.headers.authorization.split(' ')[1];
 
       /*
+
       ──────────────────────────────────────────────
       STEP 3: Verify the token
       ──────────────────────────────────────────────
@@ -124,7 +125,7 @@ const protect = async (req, res, next) => {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       ──────────────────────────────────────────────
       */
-
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       /*
       ──────────────────────────────────────────────
@@ -146,8 +147,14 @@ const protect = async (req, res, next) => {
       }
       ──────────────────────────────────────────────
       */
-
-
+      req.user = await User.findById(decoded.id);
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
+   
       /*
       ──────────────────────────────────────────────
       STEP 5: Call next() to proceed
@@ -160,11 +167,12 @@ const protect = async (req, res, next) => {
       next();
       ──────────────────────────────────────────────
       */
-
-      // ⬇️ Remove this return once you implement the STEPs above
+      next();
+    
+      /*// ⬇️ Remove this return once you implement the STEPs above
       return res.status(501).json({
         message: "Assignment Pending"
-      });
+      }); */
 
     } catch (error) {
       console.error('Auth middleware error:', error.message);
