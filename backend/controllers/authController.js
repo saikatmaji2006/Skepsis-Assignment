@@ -28,28 +28,28 @@
   Video: Complete JWT Authentication Tutorial
 
   YOUR TASKS:
-  [ ] Implement generateToken() helper function
-  [ ] Implement register() controller
-  [ ] Implement login() controller
-  [ ] Implement getMe() controller
-  [ ] Return JWT Token on register and login
-  [ ] Hash Passwords (handled in User model, but understand it!)
+  [x] Implement generateToken() helper function
+  [x] Implement register() controller
+  [x] Implement login() controller
+  [x] Implement getMe() controller
+  [x] Return JWT Token on register and login
+  [x] Hash Passwords (handled in User model, but understand it!)
 
   ESTIMATED TIME:
   3-5 Hours
 
   CHECKLIST:
-  [ ] generateToken() creates a valid JWT
-  [ ] register() checks for duplicate emails
-  [ ] register() creates a new user
-  [ ] register() returns token + user info
-  [ ] login() finds user by email
-  [ ] login() compares passwords
-  [ ] login() returns token + user info
-  [ ] getMe() returns current user profile
-  [ ] All endpoints use proper status codes
-  [ ] All endpoints have error handling
-  [ ] All APIs work in Postman
+  [x] generateToken() creates a valid JWT
+  [x] register() checks for duplicate emails
+  [x] register() creates a new user
+  [x] register() returns token + user info
+  [x] login() finds user by email
+  [x] login() compares passwords
+  [x] login() returns token + user info
+  [x] getMe() returns current user profile
+  [x] All endpoints use proper status codes
+  [x] All endpoints have error handling
+  [x] All APIs work in Postman
 
 ==================================================
 */
@@ -86,8 +86,9 @@ Why 30d?
 */
 
 const generateToken = (id) => {
-  // ⬇️ Implement JWT signing here
-  return null;
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
 };
 
 // Validation rules (DO NOT MODIFY — these are already complete)
@@ -209,9 +210,29 @@ const register = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const { name, email, password } = req.body;
+
+    const userExists = await User.findOne({ email });
+
+    if (userExists) {
+      return res.status(400).json({
+        success: false,
+        message: 'A user with that email already exists',
+      });
+    }
+
+    const user = await User.create({ name, email, password });
+
+    const token = generateToken(user._id);
+
+    res.status(201).json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
 
   } catch (error) {
@@ -300,9 +321,36 @@ const login = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email }).select('+password');
+
+    if (!user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    const isMatch = await user.matchPassword(password);
+
+    if (!isMatch) {
+      return res.status(401).json({
+        success: false,
+        message: 'Invalid email or password',
+      });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      token,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
     });
 
   } catch (error) {
@@ -361,9 +409,16 @@ const getMe = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const user = await User.findById(req.user._id);
+
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt,
+      },
     });
 
   } catch (error) {

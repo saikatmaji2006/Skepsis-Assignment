@@ -26,11 +26,11 @@
   Video: Complete Guide to Mongoose Schemas
 
   YOUR TASKS:
-  [ ] Define the User schema with name, email, password fields
-  [ ] Add proper validation rules for each field
-  [ ] Implement pre-save hook to hash passwords
-  [ ] Implement matchPassword instance method
-  [ ] Export the User model
+  [x] Define the User schema with name, email, password fields
+  [x] Add proper validation rules for each field
+  [x] Implement pre-save hook to hash passwords
+  [x] Implement matchPassword instance method
+  [x] Export the User model
 
   ESTIMATED TIME:
   2-3 Hours
@@ -46,13 +46,13 @@
     - matchPassword(enteredPassword) → returns boolean
 
   CHECKLIST:
-  [ ] Schema has name, email, password fields
-  [ ] Validation rules match the API contract above
-  [ ] select: false is set on password field
-  [ ] Pre-save hook hashes password with bcrypt
-  [ ] isModified('password') check prevents re-hashing
-  [ ] matchPassword method compares passwords correctly
-  [ ] Model is exported as 'User'
+  [x] Schema has name, email, password fields
+  [x] Validation rules match the API contract above
+  [x] select: false is set on password field
+  [x] Pre-save hook hashes password with bcrypt
+  [x] isModified('password') check prevents re-hashing
+  [x] matchPassword method compares passwords correctly
+  [x] Model is exported as 'User'
 
 ==================================================
 */
@@ -102,8 +102,26 @@ const userSchema = new mongoose.Schema(
 
 const userSchema = new mongoose.Schema(
   {
-    // ⬇️ Define your schema fields here
-
+    name: {
+      type: String,
+      required: [true, 'Name is required'],
+      trim: true,
+      maxlength: 50,
+    },
+    email: {
+      type: String,
+      required: [true, 'Email is required'],
+      unique: true,
+      lowercase: true,
+      trim: true,
+      match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
+    },
+    password: {
+      type: String,
+      required: [true, 'Password is required'],
+      minlength: 6,
+      select: false,
+    },
   },
   {
     timestamps: true,
@@ -137,8 +155,13 @@ Why genSalt(12)?
 ──────────────────────────────────────────────
 */
 
-// ⬇️ Implement your pre-save hook here
+userSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
 
+  const salt = await bcrypt.genSalt(12);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
 /*
 ──────────────────────────────────────────────
@@ -158,7 +181,8 @@ bcrypt.compare() returns true if they match, false otherwise.
 ──────────────────────────────────────────────
 */
 
-// ⬇️ Implement your matchPassword method here
-
+userSchema.methods.matchPassword = async function (enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
 
 module.exports = mongoose.model('User', userSchema);

@@ -26,12 +26,12 @@
   Video: MongoDB Indexes Explained
 
   YOUR TASKS:
-  [ ] Define the SUBJECTS array (list of valid subjects)
-  [ ] Define the Note schema with all fields
-  [ ] Add proper validation for each field
-  [ ] Set up the uploadedBy reference to User model
-  [ ] Create a text index for search functionality
-  [ ] Export the Note model AND the SUBJECTS array
+  [x] Define the SUBJECTS array (list of valid subjects)
+  [x] Define the Note schema with all fields
+  [x] Add proper validation for each field
+  [x] Set up the uploadedBy reference to User model
+  [x] Create a text index for search functionality
+  [x] Export the Note model AND the SUBJECTS array
 
   ESTIMATED TIME:
   2-3 Hours
@@ -55,13 +55,13 @@
      'Java', 'Python', 'C++', 'General']
 
   CHECKLIST:
-  [ ] SUBJECTS array is defined and exported
-  [ ] Schema has all 5 fields (title, description, subject, driveLink, uploadedBy)
-  [ ] Validation rules match the API contract
-  [ ] driveLink has custom validator for Google Drive URLs
-  [ ] uploadedBy references the User model
-  [ ] Text index is created on title, description, subject
-  [ ] Model and SUBJECTS are both exported
+  [x] SUBJECTS array is defined and exported
+  [x] Schema has all 5 fields (title, description, subject, driveLink, uploadedBy)
+  [x] Validation rules match the API contract
+  [x] driveLink has custom validator for Google Drive URLs
+  [x] uploadedBy references the User model
+  [x] Text index is created on title, description, subject
+  [x] Model and SUBJECTS are both exported
 
 ==================================================
 */
@@ -89,7 +89,9 @@ const SUBJECTS = ['DSA', 'DBMS', ...];
 */
 
 const SUBJECTS = [
-  // ⬇️ Add the subject strings here
+  'DSA', 'DBMS', 'Operating Systems', 'Computer Networks',
+  'Machine Learning', 'Artificial Intelligence', 'Web Development',
+  'Java', 'Python', 'C++', 'General',
 ];
 
 /*
@@ -139,8 +141,42 @@ const noteSchema = new mongoose.Schema(
 
 const noteSchema = new mongoose.Schema(
   {
-    // ⬇️ Define your schema fields here
-
+    title: {
+      type: String,
+      required: [true, 'Title is required'],
+      trim: true,
+      maxlength: 150,
+    },
+    description: {
+      type: String,
+      required: [true, 'Description is required'],
+      trim: true,
+      maxlength: 1000,
+    },
+    subject: {
+      type: String,
+      required: [true, 'Subject is required'],
+      enum: {
+        values: SUBJECTS,
+        message: '{VALUE} is not a valid subject',
+      },
+    },
+    driveLink: {
+      type: String,
+      required: [true, 'Google Drive link is required'],
+      trim: true,
+      validate: {
+        validator: function (v) {
+          return /^https:\/\/(drive\.google\.com|docs\.google\.com)/.test(v);
+        },
+        message: 'Please provide a valid Google Drive link',
+      },
+    },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
   },
   {
     timestamps: true,
@@ -161,8 +197,7 @@ noteSchema.index({ title: 'text', description: 'text', subject: 'text' });
 ──────────────────────────────────────────────
 */
 
-// ⬇️ Create your text index here
-
+noteSchema.index({ title: 'text', description: 'text', subject: 'text' });
 
 module.exports = mongoose.model('Note', noteSchema);
 module.exports.SUBJECTS = SUBJECTS;

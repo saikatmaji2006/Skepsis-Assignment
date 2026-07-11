@@ -29,12 +29,12 @@
   Video: HTTP Status Codes Explained
 
   YOUR TASKS:
-  [ ] Handle Mongoose ValidationError (400)
-  [ ] Handle Mongoose duplicate key error / code 11000 (400)
-  [ ] Handle Mongoose CastError / bad ObjectId (404)
-  [ ] Handle JWT JsonWebTokenError (401)
-  [ ] Handle JWT TokenExpiredError (401)
-  [ ] Add a default 500 fallback for unknown errors
+  [x] Handle Mongoose ValidationError (400)
+  [x] Handle Mongoose duplicate key error / code 11000 (400)
+  [x] Handle Mongoose CastError / bad ObjectId (404)
+  [x] Handle JWT JsonWebTokenError (401)
+  [x] Handle JWT TokenExpiredError (401)
+  [x] Add a default 500 fallback for unknown errors
 
   ESTIMATED TIME:
   2-3 Hours
@@ -52,14 +52,14 @@
   }
 
   CHECKLIST:
-  [ ] Middleware has 4 parameters (err, req, res, next)
-  [ ] ValidationError returns 400 with field-specific messages
-  [ ] Duplicate key (code 11000) returns 400
-  [ ] CastError returns 404 with "Resource not found"
-  [ ] JsonWebTokenError returns 401
-  [ ] TokenExpiredError returns 401
-  [ ] Unknown errors return 500
-  [ ] Error is logged to console for debugging
+  [x] Middleware has 4 parameters (err, req, res, next)
+  [x] ValidationError returns 400 with field-specific messages
+  [x] Duplicate key (code 11000) returns 400
+  [x] CastError returns 404 with "Resource not found"
+  [x] JsonWebTokenError returns 401
+  [x] TokenExpiredError returns 401
+  [x] Unknown errors return 500
+  [x] Error is logged to console for debugging
 
 ==================================================
 */
@@ -78,6 +78,7 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
+  console.error('Error:', err.message);
 
   /*
   ──────────────────────────────────────────────
@@ -100,6 +101,13 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
+  if (err.name === 'ValidationError') {
+    const messages = Object.values(err.errors).map((e) => e.message);
+    return res.status(400).json({
+      success: false,
+      message: messages.join(', '),
+    });
+  }
 
   /*
   ──────────────────────────────────────────────
@@ -120,6 +128,13 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
+  if (err.code === 11000) {
+    const field = Object.keys(err.keyValue)[0];
+    return res.status(400).json({
+      success: false,
+      message: `A user with that ${field} already exists`,
+    });
+  }
 
   /*
   ──────────────────────────────────────────────
@@ -139,6 +154,12 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
+  if (err.name === 'CastError') {
+    return res.status(404).json({
+      success: false,
+      message: 'Resource not found',
+    });
+  }
 
   /*
   ──────────────────────────────────────────────
@@ -169,6 +190,19 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token',
+    });
+  }
+
+  if (err.name === 'TokenExpiredError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Token expired',
+    });
+  }
 
   /*
   ──────────────────────────────────────────────
@@ -185,11 +219,9 @@ const errorHandler = (err, req, res, next) => {
   ──────────────────────────────────────────────
   */
 
-  // ⬇️ Remove this once you implement the STEPs above
-  // Default fallback so the server doesn't crash
-  res.status(500).json({
+  res.status(err.statusCode || 500).json({
     success: false,
-    message: "Error handler not yet implemented (Assignment Pending)",
+    message: err.message || 'Internal Server Error',
   });
 };
 

@@ -25,12 +25,12 @@
   Video: Environment Variables in Node.js
 
   YOUR TASKS:
-  [ ] Read MONGO_URI from environment variables
-  [ ] Connect to MongoDB using mongoose.connect()
-  [ ] Log success message on connection
-  [ ] Handle connection errors gracefully
-  [ ] Handle disconnection and reconnection events
-  [ ] Export the connectDB function
+  [x] Read MONGO_URI from environment variables
+  [x] Connect to MongoDB using mongoose.connect()
+  [x] Log success message on connection
+  [x] Handle connection errors gracefully
+  [x] Handle disconnection and reconnection events
+  [x] Export the connectDB function
 
   ESTIMATED TIME:
   1-2 Hours
@@ -41,13 +41,13 @@
   - On failure: logs error and exits process with code 1
 
   CHECKLIST:
-  [ ] mongoose.connect() is called with MONGO_URI
-  [ ] Connection success is logged
-  [ ] Connection errors are caught and logged
-  [ ] Disconnection events are handled
-  [ ] Reconnection events are handled
-  [ ] process.exit(1) is called on fatal connection failure
-  [ ] Function is exported with module.exports
+  [x] mongoose.connect() is called with MONGO_URI
+  [x] Connection success is logged
+  [x] Connection errors are caught and logged
+  [x] Disconnection events are handled
+  [x] Reconnection events are handled
+  [x] process.exit(1) is called on fatal connection failure
+  [x] Function is exported with module.exports
 
 ==================================================
 */
@@ -77,6 +77,7 @@ const connectDB = async () => {
     ──────────────────────────────────────────────
     */
 
+    const conn = await mongoose.connect(process.env.MONGO_URI);
 
     /*
     ──────────────────────────────────────────────
@@ -91,6 +92,7 @@ const connectDB = async () => {
     ──────────────────────────────────────────────
     */
 
+    console.log(`✅ MongoDB Connected: ${conn.connection.host}`);
 
     /*
     ──────────────────────────────────────────────
@@ -111,9 +113,17 @@ const connectDB = async () => {
     ──────────────────────────────────────────────
     */
 
+    mongoose.connection.on('error', (err) => {
+      console.error(`❌ MongoDB connection error: ${err.message}`);
+    });
 
-    // ⬆️ Remove this line once you implement the TODOs above
-    console.log('⚠️  Database connection not yet implemented (Assignment Pending)');
+    mongoose.connection.on('disconnected', () => {
+      console.warn('⚠️  MongoDB disconnected');
+    });
+
+    mongoose.connection.on('reconnected', () => {
+      console.log('✅ MongoDB reconnected');
+    });
 
   } catch (error) {
     console.error(`❌ MongoDB connection failed: ${error.message}`);

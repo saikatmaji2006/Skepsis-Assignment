@@ -34,28 +34,28 @@
   Video: Building REST APIs with Express
 
   YOUR TASKS (CRUD Engineer A):
-  [ ] Implement createNote()
-  [ ] Implement getAllNotes() with filtering & pagination
-  [ ] Implement getMyNotes()
+  [x] Implement createNote()
+  [x] Implement getAllNotes() with filtering & pagination
+  [x] Implement getMyNotes()
 
   YOUR TASKS (CRUD Engineer B):
-  [ ] Implement updateNote() with ownership check
-  [ ] Implement deleteNote() with ownership check
-  [ ] Implement searchNotes()
+  [x] Implement updateNote() with ownership check
+  [x] Implement deleteNote() with ownership check
+  [x] Implement searchNotes()
 
   BONUS TASK (Either Engineer):
-  [ ] Implement getStats() with aggregation
+  [x] Implement getStats() with aggregation
 
   ESTIMATED TIME:
   4-6 Hours (per engineer)
 
   CHECKLIST:
-  [ ] All 7 controller functions work in Postman
-  [ ] Proper HTTP status codes (200, 201, 400, 403, 404)
-  [ ] Ownership checks prevent unauthorized edits/deletes
-  [ ] Pagination works correctly
-  [ ] Search finds notes by title, description, or subject
-  [ ] Error handling with try/catch and next(error)
+  [x] All 7 controller functions work in Postman
+  [x] Proper HTTP status codes (200, 201, 400, 403, 404)
+  [x] Ownership checks prevent unauthorized edits/deletes
+  [x] Pagination works correctly
+  [x] Search finds notes by title, description, or subject
+  [x] Error handling with try/catch and next(error)
 
 ==================================================
 */
@@ -175,9 +175,21 @@ const createNote = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const { title, description, subject, driveLink } = req.body;
+
+    const note = await Note.create({
+      title,
+      description,
+      subject,
+      driveLink,
+      uploadedBy: req.user._id,
+    });
+
+    const populated = await note.populate('uploadedBy', 'name email');
+
+    res.status(201).json({
+      success: true,
+      note: populated,
     });
 
   } catch (error) {
@@ -253,9 +265,29 @@ const getAllNotes = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const { subject, page = 1, limit = 12 } = req.query;
+
+    const filter = {};
+    if (subject && subject !== 'All') {
+      filter.subject = subject;
+    }
+
+    const total = await Note.countDocuments(filter);
+
+    const notes = await Note.find(filter)
+      .populate('uploadedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      notes,
+      pagination: {
+        total,
+        page: parseInt(page),
+        pages: Math.ceil(total / limit),
+      },
     });
 
   } catch (error) {
@@ -307,9 +339,13 @@ const getMyNotes = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const notes = await Note.find({ uploadedBy: req.user._id })
+      .populate('uploadedBy', 'name email')
+      .sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      notes,
     });
 
   } catch (error) {
@@ -387,9 +423,31 @@ const searchNotes = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const { q } = req.query;
+
+    if (!q || q.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: 'Search query is required',
+      });
+    }
+
+    const regex = new RegExp(q.trim(), 'i');
+
+    const notes = await Note.find({
+      $or: [
+        { title: regex },
+        { description: regex },
+        { subject: regex },
+      ],
+    })
+      .populate('uploadedBy', 'name email')
+      .sort({ createdAt: -1 })
+      .limit(20);
+
+    res.json({
+      success: true,
+      notes,
     });
 
   } catch (error) {
@@ -489,10 +547,31 @@ const updateNote = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
-    });
+    let note = await Note.findById(req.params.id);
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resource not found',
+      });
+    }
+
+    if (note.uploadedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to update this resource',
+      });
+    }
+
+    const { title, description, subject, driveLink } = req.body;
+    note.title = title || note.title;
+    note.description = description || note.description;
+    note.subject = subject || note.subject;
+    note.driveLink = driveLink || note.driveLink;
+
+    await note.save();
+    const updated = await Note.findById(note._id).populate('uploadedBy', 'name email');
+    res.json({ success: true, note: updated });
 
   } catch (error) {
     next(error);
@@ -557,9 +636,27 @@ const deleteNote = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const note = await Note.findById(req.params.id);
+
+    if (!note) {
+      return res.status(404).json({
+        success: false,
+        message: 'Resource not found',
+      });
+    }
+
+    if (note.uploadedBy.toString() !== req.user._id.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to delete this resource',
+      });
+    }
+
+    await Note.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Resource deleted successfully',
     });
 
   } catch (error) {
@@ -627,9 +724,29 @@ const getStats = async (req, res, next) => {
     ──────────────────────────────────────────────
     */
 
-    // ⬇️ Remove this return once you implement the TODO above
-    return res.status(501).json({
-      message: "Assignment Pending"
+    const totalNotes = await Note.countDocuments();
+    const totalUsers = await User.countDocuments();
+
+    const subjectStats = await Note.aggregate([
+      { $group: { _id: '$subject', count: { $sum: 1 } } },
+      { $sort: { count: -1 } },
+    ]);
+
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+    const weeklyNotes = await Note.countDocuments({
+      createdAt: { $gte: oneWeekAgo },
+    });
+
+    res.json({
+      success: true,
+      stats: {
+        totalNotes,
+        totalUsers,
+        totalSubjects: subjectStats.length,
+        weeklyNotes,
+        subjectBreakdown: subjectStats,
+      },
     });
 
   } catch (error) {

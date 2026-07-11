@@ -30,11 +30,11 @@
   Video: Express Middleware Explained
 
   YOUR TASKS:
-  [ ] Read the Authorization header from the request
-  [ ] Extract the JWT token (split "Bearer <token>")
-  [ ] Verify the token using jwt.verify()
-  [ ] Find the user by decoded ID and attach to req.user
-  [ ] Handle missing/invalid tokens with proper errors
+  [x] Read the Authorization header from the request
+  [x] Extract the JWT token (split "Bearer <token>")
+  [x] Verify the token using jwt.verify()
+  [x] Find the user by decoded ID and attach to req.user
+  [x] Handle missing/invalid tokens with proper errors
 
   ESTIMATED TIME:
   2-3 Hours
@@ -54,14 +54,14 @@
   On failure: 401 response with error message
 
   CHECKLIST:
-  [ ] Reads Authorization header correctly
-  [ ] Extracts token after "Bearer "
-  [ ] Verifies token with jwt.verify()
-  [ ] Finds user by decoded ID
-  [ ] Attaches user to req.user
-  [ ] Returns 401 if no token provided
-  [ ] Returns 401 if token is invalid
-  [ ] Returns 401 if user not found
+  [x] Reads Authorization header correctly
+  [x] Extracts token after "Bearer "
+  [x] Verifies token with jwt.verify()
+  [x] Finds user by decoded ID
+  [x] Attaches user to req.user
+  [x] Returns 401 if no token provided
+  [x] Returns 401 if token is invalid
+  [x] Returns 401 if user not found
 
 ==================================================
 */
@@ -110,6 +110,7 @@ const protect = async (req, res, next) => {
       ──────────────────────────────────────────────
       */
 
+      token = req.headers.authorization.split(' ')[1];
 
       /*
       ──────────────────────────────────────────────
@@ -125,6 +126,7 @@ const protect = async (req, res, next) => {
       ──────────────────────────────────────────────
       */
 
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
       /*
       ──────────────────────────────────────────────
@@ -147,6 +149,14 @@ const protect = async (req, res, next) => {
       ──────────────────────────────────────────────
       */
 
+      req.user = await User.findById(decoded.id);
+
+      if (!req.user) {
+        return res.status(401).json({
+          success: false,
+          message: 'User not found',
+        });
+      }
 
       /*
       ──────────────────────────────────────────────
@@ -161,10 +171,7 @@ const protect = async (req, res, next) => {
       ──────────────────────────────────────────────
       */
 
-      // ⬇️ Remove this return once you implement the STEPs above
-      return res.status(501).json({
-        message: "Assignment Pending"
-      });
+      next();
 
     } catch (error) {
       console.error('Auth middleware error:', error.message);
