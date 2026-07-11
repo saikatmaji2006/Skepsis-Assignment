@@ -52,7 +52,7 @@
 ==================================================
 */
 
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const connectDB = async () => {
   try {
@@ -125,6 +125,12 @@ const connectDB = async () => {
       console.log('✅ MongoDB reconnected');
     });
 
+    mongoose.connection.on("reconnected", () => {
+      console.log("🔄 MongoDB Reconnected");
+    });
+
+    // // ⬆️ Remove this line once you implement the TODOs above
+    // console.log('⚠️  Database connection not yet implemented (Assignment Pending)');
   } catch (error) {
     console.error(`❌ MongoDB connection failed: ${error.message}`);
     process.exit(1);

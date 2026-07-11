@@ -189,6 +189,12 @@ const errorHandler = (err, req, res, next) => {
   }
   ──────────────────────────────────────────────
   */
+  if (err.name === 'JsonWebTokenError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid token',
+    });
+  }
 
   if (err.name === 'JsonWebTokenError') {
     return res.status(401).json({
@@ -218,6 +224,10 @@ const errorHandler = (err, req, res, next) => {
   });
   ──────────────────────────────────────────────
   */
+  res.status(err.statusCode || 500).json({
+    success: false,
+    message: err.message || 'Internal Server Error',
+  });
 
   res.status(err.statusCode || 500).json({
     success: false,
